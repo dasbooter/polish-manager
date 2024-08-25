@@ -1,235 +1,63 @@
 import tkinter as tk
-from tkinter import messagebox, simpledialog
 from datetime import datetime
-from nail_polish_manager import Inventory, PolishDatabase, Polish, Wishlist
+from polish_database import Inventory, PolishDatabase, Polish, Wishlist
+from polish_form import PolishForm
 
 class NailPolishApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Nail Polish Manager")
-        self.current_info_window = None  # Track the current info window
+        self.current_info_window = None
 
-        # Set up the database, inventory, and wishlist
         self.db = PolishDatabase()
         self.inventory = Inventory()
         self.wishlist = Wishlist()
 
-        # Load and resize the heart icon image
-        self.heart_icon = tk.PhotoImage(file="heart_icon.png")
-        self.heart_icon = self.heart_icon.zoom(1, 1).subsample(12, 12)
+        self.heart_icon = tk.PhotoImage(file="heart_icon.png").subsample(12, 12)
 
-        # Create buttons for each action
         self.create_buttons()
 
     def create_buttons(self):
-        tk.Button(self.root, text="Review Inventory", command=self.review_inventory).pack(pady=10)
-        tk.Button(self.root, text="Remove Polish from Inventory", command=self.remove_polish_from_inventory).pack(pady=10)
-        tk.Button(self.root, text="Wishlist", command=self.view_wishlist).pack(pady=10)
+        tk.Button(self.root, text="Review Inventory", command=lambda: self.view_items("inventory")).pack(pady=10)
+        tk.Button(self.root, text="Wishlist", command=lambda: self.view_items("wishlist")).pack(pady=10)
         tk.Button(self.root, text="Search Polish Database", command=self.search_polishes).pack(pady=10)
         tk.Button(self.root, text="Add New Polish to Database", command=self.add_polish_to_database).pack(pady=10)
-        tk.Button(self.root, text="Edit Database", command=self.edit_polish_in_database).pack(pady=10)  # Updated this line
+        tk.Button(self.root, text="Edit Database", command=self.edit_polish_in_database).pack(pady=10)
         tk.Button(self.root, text="Remove Polish from Database", command=self.remove_polish_from_database).pack(pady=10)
         tk.Button(self.root, text="Exit", command=self.root.quit).pack(pady=10)
 
-    def edit_polish_in_database(self):
-        # Create a window to search and edit a polish
-        edit_window = tk.Toplevel(self.root)
-        edit_window.title("Edit Polish in Database")
-
-        tk.Label(edit_window, text="Search for Polish to Edit:").grid(row=0, column=0, padx=10, pady=5)
-        search_entry = tk.Entry(edit_window)
-        search_entry.grid(row=0, column=1, padx=10, pady=5)
-
-        def search_and_edit():
-            search_query = search_entry.get()
-            results = self.db.search_polish(search_query)
-
-            if results:
-                result_window = tk.Toplevel(edit_window)
-                result_window.title("Select a Polish to Edit")
-
-                for idx, polish in enumerate(results):
-                    tk.Button(result_window, text=str(polish), command=lambda p=polish: self.edit_selected_polish(p, result_window)).pack(pady=5)
-            else:
-                self.show_custom_info("Search Results", "No polishes found matching the criteria.")
-
-        tk.Button(edit_window, text="Search", command=search_and_edit).grid(row=1, column=0, columnspan=2, pady=10)
-    
-    def edit_selected_polish(self, polish, result_window):
-        # Close the result window
-        result_window.destroy()
-
-        # Create a window to edit the selected polish
-        edit_window = tk.Toplevel(self.root)
-        edit_window.title("Edit Polish Details")
-
-        tk.Label(edit_window, text="Polish Name:").grid(row=0, column=0, padx=10, pady=5)
-        name_entry = tk.Entry(edit_window)
-        name_entry.insert(0, polish.name)
-        name_entry.grid(row=0, column=1, padx=10, pady=5)
-
-        tk.Label(edit_window, text="Collection:").grid(row=1, column=0, padx=10, pady=5)
-        collection_entry = tk.Entry(edit_window)
-        collection_entry.insert(0, polish.collection)
-        collection_entry.grid(row=1, column=1, padx=10, pady=5)
-
-        tk.Label(edit_window, text="Year:").grid(row=2, column=0, padx=10, pady=5)
-        year_listbox = tk.Listbox(edit_window, height=4)
-        year_listbox.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
-
-        scrollbar = tk.Scrollbar(edit_window, orient="vertical", command=year_listbox.yview)
-        scrollbar.grid(row=2, column=2, sticky='ns')
-        year_listbox.config(yscrollcommand=scrollbar.set)
-
-        current_year = datetime.now().year
-        for year in range(current_year, 1900, -1):
-            year_listbox.insert(tk.END, str(year))
-            if str(year) == polish.year:
-                year_listbox.selection_set(tk.END)
-
-        tk.Label(edit_window, text="Brand:").grid(row=3, column=0, padx=10, pady=5)
-        brand_entry = tk.Entry(edit_window)
-        brand_entry.insert(0, polish.brand)
-        brand_entry.grid(row=3, column=1, padx=10, pady=5)
-
-        tk.Label(edit_window, text="Color:").grid(row=6, column=0, padx=10, pady=5)
-        color_entry = tk.Entry(edit_window)
-        color_entry.insert(0, polish.color)
-        color_entry.grid(row=6, column=1, padx=10, pady=5)
-
-        tk.Label(edit_window, text="Finish:").grid(row=8, column=0, padx=10, pady=5)
-        finish_entry = tk.Entry(edit_window)
-        finish_entry.insert(0, polish.finish)
-        finish_entry.grid(row=8, column=1, padx=10, pady=5)
-
-        tk.Label(edit_window, text="Alternate Finish:").grid(row=10, column=0, padx=10, pady=5)
-        alt_finish_entry = tk.Entry(edit_window)
-        alt_finish_entry.insert(0, polish.alternate_finish)
-        alt_finish_entry.grid(row=10, column=1, padx=10, pady=5)
-
-        def save_edited_polish():
-            # Update the polish details
-            polish.name = name_entry.get()
-            polish.collection = collection_entry.get()
-            year_selection = year_listbox.curselection()
-            polish.year = year_listbox.get(year_selection) if year_selection else polish.year
-            polish.brand = brand_entry.get()
-            polish.color = color_entry.get()
-            polish.finish = finish_entry.get()
-            polish.alternate_finish = alt_finish_entry.get()
-
-            # Save the updated polish back to the database
-            self.db.update_polish(polish)
-            self.show_custom_info("Success", "Polish details updated successfully.")
-            edit_window.destroy()
-
-        tk.Button(edit_window, text="Save Changes", command=save_edited_polish).grid(row=12, column=0, columnspan=2, pady=10)
-
-    def show_custom_info(self, title, message):
-        # Close any existing info window
+    def show_message(self, title, message):
         if self.current_info_window:
             self.current_info_window.destroy()
 
-        # Create a new info window
         self.current_info_window = tk.Toplevel(self.root)
         self.current_info_window.title(title)
-
         tk.Label(self.current_info_window, text=message).pack(padx=20, pady=20)
         tk.Button(self.current_info_window, text="OK", command=self.current_info_window.destroy).pack(pady=10)
 
-    def review_inventory(self):
-        inventory = self.inventory.view_inventory()
-        
-        if inventory:
-            inventory_window = tk.Toplevel(self.root)
-            inventory_window.title("Your Inventory")
+    def view_items(self, item_type):
+        items = getattr(self, item_type).display_all()
 
-            for polish in inventory:
-                tk.Label(inventory_window, text=str(polish)).pack(anchor='w', padx=10, pady=2)
+        if items:
+            items_window = tk.Toplevel(self.root)
+            items_window.title(f"Your {item_type.capitalize()}")
+
+            for item in items:
+                tk.Label(items_window, text=str(item)).pack(anchor='w', padx=10, pady=2)
         else:
-            messagebox.showinfo("Your Inventory", "Your inventory is empty.")
-
-    def view_wishlist(self):
-        wishlist = self.wishlist.view_wishlist()
-
-        if wishlist:
-            wishlist_window = tk.Toplevel(self.root)
-            wishlist_window.title("Your Wishlist")
-
-            for idx, polish in enumerate(wishlist):
-                tk.Button(wishlist_window, text=str(polish), command=lambda i=idx: self.remove_from_wishlist_and_close(i, wishlist_window)).pack(pady=5)
-        else:
-            messagebox.showinfo("Wishlist", "Your wishlist is empty.")
-
-    def add_to_wishlist(self, polish):
-        self.wishlist.add_to_wishlist(polish)
-        messagebox.showinfo("Success", f"{polish.name} added to your wishlist.")
-
-    def remove_from_wishlist_and_close(self, index, window):
-        self.wishlist.remove_from_wishlist(index=index)
-        messagebox.showinfo("Success", "Polish removed from your wishlist.")
-        window.destroy()
+            self.show_message(f"Your {item_type.capitalize()}", f"Your {item_type} is empty.")
 
     def search_polishes(self):
         search_window = tk.Toplevel(self.root)
         search_window.title("Search Known Polishes")
 
-        tk.Label(search_window, text="Polish Name:").grid(row=0, column=0, padx=10, pady=5)
-        name_entry = tk.Entry(search_window)
-        name_entry.grid(row=0, column=1, padx=10, pady=5)
-
-        tk.Label(search_window, text="Collection:").grid(row=1, column=0, padx=10, pady=5)
-        collection_entry = tk.Entry(search_window)
-        collection_entry.grid(row=1, column=1, padx=10, pady=5)
-        self.create_listbox_for_entry(search_window, collection_entry, self.get_unique_values("collection"), row=2)
-
-        tk.Label(search_window, text="Year:").grid(row=2, column=0, padx=10, pady=5)
-        # Scrollable year listbox
-        year_listbox = tk.Listbox(search_window, height=4)
-        year_listbox.grid(row=3, column=1, padx=10, pady=5, sticky="ew")
-        
-        scrollbar = tk.Scrollbar(search_window, orient="vertical", command=year_listbox.yview)
-        scrollbar.grid(row=3, column=2, sticky='ns')
-        
-        year_listbox.config(yscrollcommand=scrollbar.set)
-        
-        # Populate the listbox with years
-        current_year = datetime.now().year
-        for year in range(current_year, 1900, -1):
-            year_listbox.insert(tk.END, str(year))
-
-        tk.Label(search_window, text="Brand:").grid(row=4, column=0, padx=10, pady=5)
-        brand_entry = tk.Entry(search_window)
-        brand_entry.grid(row=4, column=1, padx=10, pady=5)
-        self.create_listbox_for_entry(search_window, brand_entry, self.get_unique_values("brand"), row=5)
-
-        tk.Label(search_window, text="Color:").grid(row=6, column=0, padx=10, pady=5)
-        color_entry = tk.Entry(search_window)
-        color_entry.grid(row=6, column=1, padx=10, pady=5)
-        self.create_listbox_for_entry(search_window, color_entry, self.get_unique_values("color"), row=7)
-
-        tk.Label(search_window, text="Finish:").grid(row=8, column=0, padx=10, pady=5)
-        finish_entry = tk.Entry(search_window)
-        finish_entry.grid(row=8, column=1, padx=10, pady=5)
-        self.create_listbox_for_entry(search_window, finish_entry, self.get_unique_values("finish"), row=9)
-
-        tk.Label(search_window, text="Alternate Finish:").grid(row=10, column=0, padx=10, pady=5)
-        alt_finish_entry = tk.Entry(search_window)
-        alt_finish_entry.grid(row=10, column=1, padx=10, pady=5)
-        self.create_listbox_for_entry(search_window, alt_finish_entry, self.get_unique_values("alternate_finish"), row=11)
+        polish_form = PolishForm(search_window, self.db)
 
         def search_results():
-            name = name_entry.get()
-            collection = collection_entry.get()
-            year_selection = year_listbox.curselection()
-            year = year_listbox.get(year_selection) if year_selection else ""
-            brand = brand_entry.get()
-            color = color_entry.get()
-            finish = finish_entry.get()
-            alternate_finish = alt_finish_entry.get()
+            data = polish_form.get_form_data()
 
-            results = self.db.search_polish(name, collection, year, brand, color, finish, alternate_finish)
-            
+            results = self.db.search_polish(**data)
+
             if results:
                 result_window = tk.Toplevel(search_window)
                 result_window.title("Search Results")
@@ -241,137 +69,105 @@ class NailPolishApp:
                     tk.Button(frame, text=str(polish), command=lambda p=polish: self.add_to_inventory_and_close(p, result_window)).pack(side="left")
                     tk.Button(frame, image=self.heart_icon, command=lambda p=polish: self.add_to_wishlist(p)).pack(side="right")
             else:
-                messagebox.showinfo("Search Results", "No polishes found matching the criteria.")
+                self.show_message("Search Results", "No polishes found matching the criteria.")
 
         tk.Button(search_window, text="Search", command=search_results).grid(row=12, column=0, columnspan=2, pady=10)
-
-    def add_to_inventory_and_close(self, polish, window):
-        self.inventory.add_to_inventory(polish)
-        messagebox.showinfo("Success", f"{polish.name} added to your inventory.")
-        window.destroy()
 
     def add_polish_to_database(self):
         add_window = tk.Toplevel(self.root)
         add_window.title("Add New Polish to Database")
 
-        tk.Label(add_window, text="Polish Name:").grid(row=0, column=0, padx=10, pady=5)
-        name_entry = tk.Entry(add_window)
-        name_entry.grid(row=0, column=1, padx=10, pady=5)
-
-        tk.Label(add_window, text="Collection:").grid(row=1, column=0, padx=10, pady=5)
-        collection_entry = tk.Entry(add_window)
-        collection_entry.grid(row=1, column=1, padx=10, pady=5)
-        self.create_listbox_for_entry(add_window, collection_entry, self.get_unique_values("collection"), row=2)
-
-        tk.Label(add_window, text="Year:").grid(row=3, column=0, padx=10, pady=5)
-        # Scrollable year listbox
-        year_listbox = tk.Listbox(add_window, height=4)
-        year_listbox.grid(row=3, column=1, padx=10, pady=5, sticky="ew")
-        
-        scrollbar = tk.Scrollbar(add_window, orient="vertical", command=year_listbox.yview)
-        scrollbar.grid(row=3, column=2, sticky='ns')
-        
-        year_listbox.config(yscrollcommand=scrollbar.set)
-        
-        # Populate the listbox with years
-        current_year = datetime.now().year
-        for year in range(current_year, 1900, -1):
-            year_listbox.insert(tk.END, str(year))
-
-        tk.Label(add_window, text="Brand:").grid(row=4, column=0, padx=10, pady=5)
-        brand_entry = tk.Entry(add_window)
-        brand_entry.grid(row=4, column=1, padx=10, pady=5)
-        self.create_listbox_for_entry(add_window, brand_entry, self.get_unique_values("brand"), row=5)
-
-        tk.Label(add_window, text="Color:").grid(row=6, column=0, padx=10, pady=5)
-        color_entry = tk.Entry(add_window)
-        color_entry.grid(row=6, column=1, padx=10, pady=5)
-        self.create_listbox_for_entry(add_window, color_entry, self.get_unique_values("color"), row=7)
-
-        tk.Label(add_window, text="Finish:").grid(row=8, column=0, padx=10, pady=5)
-        finish_entry = tk.Entry(add_window)
-        finish_entry.grid(row=8, column=1, padx=10, pady=5)
-        self.create_listbox_for_entry(add_window, finish_entry, self.get_unique_values("finish"), row=9)
-
-        tk.Label(add_window, text="Alternate Finish:").grid(row=10, column=0, padx=10, pady=5)
-        alt_finish_entry = tk.Entry(add_window)
-        alt_finish_entry.grid(row=10, column=1, padx=10, pady=5)
-        self.create_listbox_for_entry(add_window, alt_finish_entry, self.get_unique_values("alternate_finish"), row=11)
+        polish_form = PolishForm(add_window, self.db)
 
         def save_polish():
-            name = name_entry.get()
-            collection = collection_entry.get()
-            year_selection = year_listbox.curselection()
-            year = year_listbox.get(year_selection) if year_selection else ""
-            brand = brand_entry.get()
-            color = color_entry.get()
-            finish = finish_entry.get()
-            alternate_finish = alt_finish_entry.get()
+            data = polish_form.get_form_data()
 
-            if not name:
-                messagebox.showerror("Error", "Polish name is required.")
+            if not data["name"]:
+                self.show_message("Error", "Polish name is required.")
                 return
 
-            new_polish = Polish(name, collection, year, brand, color, finish, alternate_finish)
-            self.db.add_polish(new_polish)
-            messagebox.showinfo("Success", "New polish added to the database.")
+            new_polish = Polish(**data)
+            self.db.manage_polish(new_polish, "add")
+            self.show_message("Success", "New polish added to the database.")
             add_window.destroy()
 
         tk.Button(add_window, text="Add Polish", command=save_polish).grid(row=12, column=0, columnspan=2, pady=10)
 
-    def create_listbox_for_entry(self, window, entry, values, row):
-        listbox = tk.Listbox(window, height=5)
-        listbox.grid(row=row, column=1, padx=10, pady=5)
-        listbox.bind("<<ListboxSelect>>", lambda event: self.select_from_listbox(event, entry))
-        
-        for value in values:
-            listbox.insert(tk.END, value)
+    def edit_polish_in_database(self):
+        edit_window = tk.Toplevel(self.root)
+        edit_window.title("Edit Polish in Database")
 
-    def select_from_listbox(self, event, entry):
-        widget = event.widget
-        selection = widget.curselection()
-        if selection:
-            selected_value = widget.get(selection[0])
-            entry.delete(0, tk.END)
-            entry.insert(0, selected_value)
+        polish_form = PolishForm(edit_window, self.db)
 
-    def get_unique_values(self, attribute):
-        polishes = self.db.display_all()
-        return sorted(set(getattr(polish, attribute) for polish in polishes if getattr(polish, attribute)))
+        def search_and_edit():
+            data = polish_form.get_form_data()
+
+            results = self.db.search_polish(**data)
+
+            if results:
+                polish = results[0]  # Assuming we're editing the first found polish
+                polish_form.populate_form(polish)
+                self.edit_polish_form(polish, edit_window)
+            else:
+                self.show_message("Search Results", "No polishes found matching the criteria.")
+
+        tk.Button(edit_window, text="Search", command=search_and_edit).grid(row=12, column=0, columnspan=2, pady=10)
 
     def remove_polish_from_database(self):
-        polishes = self.db.display_all()
-        
-        if polishes:
-            remove_window = tk.Toplevel(self.root)
-            remove_window.title("Remove Polish from Database")
+        remove_window = tk.Toplevel(self.root)
+        remove_window.title("Remove Polish from Database")
 
-            for idx, polish in enumerate(polishes):
-                tk.Button(remove_window, text=str(polish), command=lambda i=idx: self.remove_from_db_and_close(i, remove_window)).pack(pady=5)
-        else:
-            messagebox.showinfo("Remove Polish", "No polishes in the database.")
+        polish_form = PolishForm(remove_window, self.db)
 
-    def remove_from_db_and_close(self, index, window):
-        self.db.remove_polish(index=index)
-        messagebox.showinfo("Success", "Polish removed from the database.")
+        def search_and_remove():
+            data = polish_form.get_form_data()
+
+            results = self.db.search_polish(**data)
+
+            if results:
+                result_window = tk.Toplevel(remove_window)
+                result_window.title("Select Polish to Remove")
+
+                for idx, polish in enumerate(results):
+                    tk.Button(result_window, text=str(polish), command=lambda p=polish: self.remove_selected_polish(p, result_window)).pack(pady=5)
+            else:
+                self.show_message("Search Results", "No polishes found matching the criteria.")
+
+        tk.Button(remove_window, text="Search", command=search_and_remove).grid(row=12, column=0, columnspan=2, pady=10)
+
+    def remove_selected_polish(self, polish, result_window):
+        self.db.manage_polish(polish, "remove")
+        self.show_message("Success", "Polish removed from the database.")
+        result_window.destroy()
+
+    def edit_polish_form(self, polish, parent_window):
+        polish_form = PolishForm(parent_window, self.db)
+        polish_form.populate_form(polish)
+
+        def save_changes():
+            data = polish_form.get_form_data()
+            polish.name = data["name"]
+            polish.collection = data["collection"]
+            polish.year = data["year"]
+            polish.brand = data["brand"]
+            polish.color = data["color"]
+            polish.finish = data["finish"]
+            polish.alternate_finish = data["alternate_finish"]
+
+            self.db.manage_polish(polish, "update")
+            self.show_message("Success", "Polish details updated successfully.")
+            parent_window.destroy()
+
+        tk.Button(parent_window, text="Save Changes", command=save_changes).grid(row=12, column=0, columnspan=2, pady=10)
+
+    def add_to_inventory_and_close(self, polish, window):
+        self.inventory.manage_polish(polish, "add")
+        self.show_message("Success", f"{polish.name} added to your inventory.")
         window.destroy()
 
-    def remove_polish_from_inventory(self):
-        inventory = self.inventory.view_inventory()
-        
-        if inventory:
-            remove_window = tk.Toplevel(self.root)
-            remove_window.title("Remove Polish from Inventory")
-
-            for idx, polish in enumerate(inventory):
-                tk.Button(remove_window, text=str(polish), command=lambda i=idx: self.remove_from_inventory_and_close(i, remove_window)).pack(pady=5)
-        else:
-            messagebox.showinfo("Remove Polish", "Your inventory is empty.")
-
-    def remove_from_inventory_and_close(self, index, window):
-        self.inventory.remove_from_inventory(index=index)
-        messagebox.showinfo("Success", "Polish removed from your inventory.")
-        window.destroy()
+    def add_to_wishlist(self, polish):
+        self.wishlist.manage_polish(polish, "add")
+        self.show_message("Success", f"{polish.name} added to your wishlist.")
 
 if __name__ == "__main__":
     root = tk.Tk()
