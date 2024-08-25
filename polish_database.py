@@ -49,51 +49,36 @@ class PolishDatabase:
         except FileNotFoundError:
             return []
     
-    def update_polish(self, updated_polish):
-        for i, polish in enumerate(self.polishes):
-            if polish.name == updated_polish.name:
-                self.polishes[i] = updated_polish
-                break
-        self.save_polishes()
-
     def save_polishes(self):
         with open(self.filename, "w") as file:
             json.dump([polish.to_dict() for polish in self.polishes], file)
 
-    def add_polish(self, polish):
-        self.polishes.append(polish)
+    def manage_polish(self, polish, operation="add"):
+        if operation == "add":
+            self.polishes.append(polish)
+        elif operation == "update":
+            for i, p in enumerate(self.polishes):
+                if p.name == polish.name:
+                    self.polishes[i] = polish
+                    break
+        elif operation == "remove":
+            self.polishes = [p for p in self.polishes if p != polish]
         self.save_polishes()
 
-    def remove_polish(self, index=None, name=None, collection=None, year=None, brand=None, color=None, finish=None, alternate_finish=None):
-        if index is not None:
-            try:
-                del self.polishes[index]
-            except IndexError:
-                print("Index out of range.")
-        else:
-            self.polishes = [polish for polish in self.polishes if not (
-                (name and name.lower() == polish.name.lower()) and
-                (collection and collection.lower() == polish.collection.lower()) and
-                (year and year.lower() == polish.year.lower()) and
-                (brand and brand.lower() == polish.brand.lower()) and
-                (color and color.lower() == polish.color.lower()) and
-                (finish and finish.lower() == polish.finish.lower()) and
-                (alternate_finish and alternate_finish.lower() == polish.alternate_finish.lower())
-            )]
-        self.save_polishes()
-
-    def search_polish(self, name=None, collection=None, year=None, brand=None, color=None, finish=None, alternate_finish=None):
+    def search_polish(self, **kwargs):
         results = []
         for polish in self.polishes:
-            if ((name and name.lower() in polish.name.lower()) or
-                (collection and collection.lower() in polish.collection.lower()) or
-                (year and year.lower() == polish.year.lower()) or
-                (brand and brand.lower() in polish.brand.lower()) or
-                (color and color.lower() in polish.color.lower()) or
-                (finish and finish.lower() in polish.finish.lower()) or
-                (alternate_finish and alternate_finish.lower() == polish.alternate_finish.lower())):
+            if all(getattr(polish, key, "").lower() == val.lower() for key, val in kwargs.items() if val):
                 results.append(polish)
         return results
 
     def display_all(self):
         return self.polishes
+
+class Inventory(PolishDatabase):
+    def __init__(self, filename="inventory.json"):
+        super().__init__(filename)
+
+class Wishlist(PolishDatabase):
+    def __init__(self, filename="wishlist.json"):
+        super().__init__(filename)
