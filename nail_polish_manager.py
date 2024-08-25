@@ -1,4 +1,5 @@
 import json
+from tkinter import messagebox
 from polish_database import Polish, PolishDatabase
 
 class Inventory:
@@ -31,7 +32,37 @@ class Inventory:
 
     def view_inventory(self):
         return self.polishes
+    
+class Wishlist:
+    def __init__(self, filename="wishlist.json"):
+        self.filename = filename
+        self.polishes = self.load_wishlist()
 
+    def load_wishlist(self):
+        try:
+            with open(self.filename, "r") as file:
+                polishes_data = json.load(file)
+                return [Polish.from_dict(data) for data in polishes_data]
+        except FileNotFoundError:
+            return []
+
+    def save_wishlist(self):
+        with open(self.filename, "w") as file:
+            json.dump([polish.to_dict() for polish in self.polishes], file)
+
+    def add_to_wishlist(self, polish):
+        self.polishes.append(polish)
+        self.save_wishlist()
+
+    def remove_from_wishlist(self, index):
+        try:
+            del self.polishes[index]
+            self.save_wishlist()
+        except IndexError:
+            print("Index out of range.")
+
+    def view_wishlist(self):
+        return self.polishes
 
 def main():
     db = PolishDatabase()
