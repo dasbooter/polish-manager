@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, simpledialog
-from nail_polish_manager import Inventory, PolishDatabase, Polish
+from nail_polish_manager import Inventory, PolishDatabase, Polish, Wishlist
 
 class NailPolishApp:
     def __init__(self, root):
@@ -10,16 +10,23 @@ class NailPolishApp:
         # Set up the database and inventory
         self.db = PolishDatabase()
         self.inventory = Inventory()
+        self.wishlist = Wishlist()
+
+        # Load and resize the heart icon image
+        self.heart_icon = tk.PhotoImage(file="heart_icon.png")
+        # Subsample the image to resize it. Adjust the values as needed.
+        self.heart_icon = self.heart_icon.zoom(1, 1).subsample(12, 12)
 
         # Create buttons for each action
         self.create_buttons()
 
     def create_buttons(self):
         tk.Button(self.root, text="Review Inventory", command=self.review_inventory).pack(pady=10)
-        tk.Button(self.root, text="Search Known Polishes", command=self.search_polishes).pack(pady=10)
+        tk.Button(self.root, text="Remove Polish from Inventory", command=self.remove_polish_from_inventory).pack(pady=10)
+        tk.Button(self.root, text="Wishlist", command=self.view_wishlist).pack(pady=10)
+        tk.Button(self.root, text="Search Polish Database", command=self.search_polishes).pack(pady=10)
         tk.Button(self.root, text="Add New Polish to Database", command=self.add_polish_to_database).pack(pady=10)
         tk.Button(self.root, text="Remove Polish from Database", command=self.remove_polish_from_database).pack(pady=10)
-        tk.Button(self.root, text="Remove Polish from Inventory", command=self.remove_polish_from_inventory).pack(pady=10)
         tk.Button(self.root, text="Exit", command=self.root.quit).pack(pady=10)
 
     def review_inventory(self):
@@ -33,6 +40,27 @@ class NailPolishApp:
                 tk.Label(inventory_window, text=str(polish)).pack(anchor='w', padx=10, pady=2)
         else:
             messagebox.showinfo("Your Inventory", "Your inventory is empty.")
+
+    def view_wishlist(self):
+        wishlist = self.wishlist.view_wishlist()
+
+        if wishlist:
+            wishlist_window = tk.Toplevel(self.root)
+            wishlist_window.title("Your Wishlist")
+
+            for idx, polish in enumerate(wishlist):
+                tk.Button(wishlist_window, text=str(polish), command=lambda i=idx: self.remove_from_wishlist_and_close(i, wishlist_window)).pack(pady=5)
+        else:
+            messagebox.showinfo("Wishlist", "Your wishlist is empty.")
+
+    def add_to_wishlist(self, polish):
+        self.wishlist.add_to_wishlist(polish)
+        messagebox.showinfo("Success", f"{polish.name} added to your wishlist.")
+
+    def remove_from_wishlist_and_close(self, index, window):
+        self.wishlist.remove_from_wishlist(index=index)
+        messagebox.showinfo("Success", "Polish removed from your wishlist.")
+        window.destroy()
 
     def search_polishes(self):
         search_window = tk.Toplevel(self.root)
@@ -76,7 +104,11 @@ class NailPolishApp:
                 result_window.title("Search Results")
 
                 for idx, polish in enumerate(results):
-                    tk.Button(result_window, text=str(polish), command=lambda p=polish: self.add_to_inventory_and_close(p, result_window)).pack(pady=5)
+                    frame = tk.Frame(result_window)
+                    frame.pack(fill='x', pady=5)
+
+                    tk.Button(frame, text=str(polish), command=lambda p=polish: self.add_to_inventory_and_close(p, result_window)).pack(side="left")
+                    tk.Button(frame, image=self.heart_icon, command=lambda p=polish: self.add_to_wishlist(p)).pack(side="right")
             else:
                 messagebox.showinfo("Search Results", "No polishes found matching the criteria.")
 
