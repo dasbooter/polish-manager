@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, simpledialog
+from datetime import datetime
 from nail_polish_manager import Inventory, PolishDatabase, Polish, Wishlist
 
 class NailPolishApp:
@@ -7,14 +8,13 @@ class NailPolishApp:
         self.root = root
         self.root.title("Nail Polish Manager")
 
-        # Set up the database and inventory
+        # Set up the database, inventory, and wishlist
         self.db = PolishDatabase()
         self.inventory = Inventory()
         self.wishlist = Wishlist()
 
         # Load and resize the heart icon image
         self.heart_icon = tk.PhotoImage(file="heart_icon.png")
-        # Subsample the image to resize it. Adjust the values as needed.
         self.heart_icon = self.heart_icon.zoom(1, 1).subsample(12, 12)
 
         # Create buttons for each action
@@ -75,29 +75,52 @@ class NailPolishApp:
         collection_entry.grid(row=1, column=1, padx=10, pady=5)
         self.create_listbox_for_entry(search_window, collection_entry, self.get_unique_values("collection"), row=2)
 
-        tk.Label(search_window, text="Brand:").grid(row=3, column=0, padx=10, pady=5)
+        tk.Label(search_window, text="Year:").grid(row=2, column=0, padx=10, pady=5)
+        # Scrollable year listbox
+        year_listbox = tk.Listbox(search_window, height=4)
+        year_listbox.grid(row=3, column=1, padx=10, pady=5, sticky="ew")
+        
+        scrollbar = tk.Scrollbar(search_window, orient="vertical", command=year_listbox.yview)
+        scrollbar.grid(row=3, column=2, sticky='ns')
+        
+        year_listbox.config(yscrollcommand=scrollbar.set)
+        
+        # Populate the listbox with years
+        current_year = datetime.now().year
+        for year in range(current_year, 1900, -1):
+            year_listbox.insert(tk.END, str(year))
+
+        tk.Label(search_window, text="Brand:").grid(row=4, column=0, padx=10, pady=5)
         brand_entry = tk.Entry(search_window)
-        brand_entry.grid(row=3, column=1, padx=10, pady=5)
-        self.create_listbox_for_entry(search_window, brand_entry, self.get_unique_values("brand"), row=4)
+        brand_entry.grid(row=4, column=1, padx=10, pady=5)
+        self.create_listbox_for_entry(search_window, brand_entry, self.get_unique_values("brand"), row=5)
 
-        tk.Label(search_window, text="Color:").grid(row=5, column=0, padx=10, pady=5)
+        tk.Label(search_window, text="Color:").grid(row=6, column=0, padx=10, pady=5)
         color_entry = tk.Entry(search_window)
-        color_entry.grid(row=5, column=1, padx=10, pady=5)
-        self.create_listbox_for_entry(search_window, color_entry, self.get_unique_values("color"), row=6)
+        color_entry.grid(row=6, column=1, padx=10, pady=5)
+        self.create_listbox_for_entry(search_window, color_entry, self.get_unique_values("color"), row=7)
 
-        tk.Label(search_window, text="Finish:").grid(row=7, column=0, padx=10, pady=5)
+        tk.Label(search_window, text="Finish:").grid(row=8, column=0, padx=10, pady=5)
         finish_entry = tk.Entry(search_window)
-        finish_entry.grid(row=7, column=1, padx=10, pady=5)
-        self.create_listbox_for_entry(search_window, finish_entry, self.get_unique_values("finish"), row=8)
+        finish_entry.grid(row=8, column=1, padx=10, pady=5)
+        self.create_listbox_for_entry(search_window, finish_entry, self.get_unique_values("finish"), row=9)
+
+        tk.Label(search_window, text="Alternate Finish:").grid(row=10, column=0, padx=10, pady=5)
+        alt_finish_entry = tk.Entry(search_window)
+        alt_finish_entry.grid(row=10, column=1, padx=10, pady=5)
+        self.create_listbox_for_entry(search_window, alt_finish_entry, self.get_unique_values("alternate_finish"), row=11)
 
         def search_results():
             name = name_entry.get()
             collection = collection_entry.get()
+            year_selection = year_listbox.curselection()
+            year = year_listbox.get(year_selection) if year_selection else ""
             brand = brand_entry.get()
             color = color_entry.get()
             finish = finish_entry.get()
+            alternate_finish = alt_finish_entry.get()
 
-            results = self.db.search_polish(name, collection, brand, color, finish)
+            results = self.db.search_polish(name, collection, year, brand, color, finish, alternate_finish)
             
             if results:
                 result_window = tk.Toplevel(search_window)
@@ -112,9 +135,7 @@ class NailPolishApp:
             else:
                 messagebox.showinfo("Search Results", "No polishes found matching the criteria.")
 
-        tk.Button(search_window, text="Search", command=search_results).grid(row=9, column=0, columnspan=2, pady=10)
-
-
+        tk.Button(search_window, text="Search", command=search_results).grid(row=12, column=0, columnspan=2, pady=10)
 
     def add_to_inventory_and_close(self, polish, window):
         self.inventory.add_to_inventory(polish)
@@ -134,38 +155,61 @@ class NailPolishApp:
         collection_entry.grid(row=1, column=1, padx=10, pady=5)
         self.create_listbox_for_entry(add_window, collection_entry, self.get_unique_values("collection"), row=2)
 
-        tk.Label(add_window, text="Brand:").grid(row=3, column=0, padx=10, pady=5)
+        tk.Label(add_window, text="Year:").grid(row=3, column=0, padx=10, pady=5)
+        # Scrollable year listbox
+        year_listbox = tk.Listbox(add_window, height=4)
+        year_listbox.grid(row=3, column=1, padx=10, pady=5, sticky="ew")
+        
+        scrollbar = tk.Scrollbar(add_window, orient="vertical", command=year_listbox.yview)
+        scrollbar.grid(row=3, column=2, sticky='ns')
+        
+        year_listbox.config(yscrollcommand=scrollbar.set)
+        
+        # Populate the listbox with years
+        current_year = datetime.now().year
+        for year in range(current_year, 1900, -1):
+            year_listbox.insert(tk.END, str(year))
+
+        tk.Label(add_window, text="Brand:").grid(row=4, column=0, padx=10, pady=5)
         brand_entry = tk.Entry(add_window)
-        brand_entry.grid(row=3, column=1, padx=10, pady=5)
-        self.create_listbox_for_entry(add_window, brand_entry, self.get_unique_values("brand"), row=4)
+        brand_entry.grid(row=4, column=1, padx=10, pady=5)
+        self.create_listbox_for_entry(add_window, brand_entry, self.get_unique_values("brand"), row=5)
 
-        tk.Label(add_window, text="Color:").grid(row=5, column=0, padx=10, pady=5)
+        tk.Label(add_window, text="Color:").grid(row=6, column=0, padx=10, pady=5)
         color_entry = tk.Entry(add_window)
-        color_entry.grid(row=5, column=1, padx=10, pady=5)
-        self.create_listbox_for_entry(add_window, color_entry, self.get_unique_values("color"), row=6)
+        color_entry.grid(row=6, column=1, padx=10, pady=5)
+        self.create_listbox_for_entry(add_window, color_entry, self.get_unique_values("color"), row=7)
 
-        tk.Label(add_window, text="Finish:").grid(row=7, column=0, padx=10, pady=5)
+        tk.Label(add_window, text="Finish:").grid(row=8, column=0, padx=10, pady=5)
         finish_entry = tk.Entry(add_window)
-        finish_entry.grid(row=7, column=1, padx=10, pady=5)
-        self.create_listbox_for_entry(add_window, finish_entry, self.get_unique_values("finish"), row=8)
+        finish_entry.grid(row=8, column=1, padx=10, pady=5)
+        self.create_listbox_for_entry(add_window, finish_entry, self.get_unique_values("finish"), row=9)
+
+        tk.Label(add_window, text="Alternate Finish:").grid(row=10, column=0, padx=10, pady=5)
+        alt_finish_entry = tk.Entry(add_window)
+        alt_finish_entry.grid(row=10, column=1, padx=10, pady=5)
+        self.create_listbox_for_entry(add_window, alt_finish_entry, self.get_unique_values("alternate_finish"), row=11)
 
         def save_polish():
             name = name_entry.get()
             collection = collection_entry.get()
+            year_selection = year_listbox.curselection()
+            year = year_listbox.get(year_selection) if year_selection else ""
             brand = brand_entry.get()
             color = color_entry.get()
             finish = finish_entry.get()
+            alternate_finish = alt_finish_entry.get()
 
             if not name:
                 messagebox.showerror("Error", "Polish name is required.")
                 return
 
-            new_polish = Polish(name, collection, brand, color, finish)
+            new_polish = Polish(name, collection, year, brand, color, finish, alternate_finish)
             self.db.add_polish(new_polish)
             messagebox.showinfo("Success", "New polish added to the database.")
             add_window.destroy()
 
-        tk.Button(add_window, text="Add Polish", command=save_polish).grid(row=9, column=0, columnspan=2, pady=10)
+        tk.Button(add_window, text="Add Polish", command=save_polish).grid(row=12, column=0, columnspan=2, pady=10)
 
     def create_listbox_for_entry(self, window, entry, values, row):
         listbox = tk.Listbox(window, height=5)
