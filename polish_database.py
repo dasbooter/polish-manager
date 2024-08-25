@@ -48,6 +48,13 @@ class PolishDatabase:
                 return [Polish.from_dict(data) for data in polishes_data]
         except FileNotFoundError:
             return []
+    
+    def update_polish(self, updated_polish):
+        for i, polish in enumerate(self.polishes):
+            if polish.name == updated_polish.name:
+                self.polishes[i] = updated_polish
+                break
+        self.save_polishes()
 
     def save_polishes(self):
         with open(self.filename, "w") as file:
