@@ -87,6 +87,7 @@ class PolishForm:
         entry.delete(0, tk.END)
         if entry == self.entries.get("year"):
             self.listboxes["year"].selection_clear(0, tk.END)
+        entry.focus_set()
 
     def create_listbox_for_entry(self, entry, values, row):
         listbox = tk.Listbox(self.parent, height=5)
