@@ -1,3 +1,4 @@
+import os
 import tkinter as tk
 from datetime import datetime
 from polish_database import Inventory, PolishDatabase, Polish, Wishlist
@@ -13,7 +14,10 @@ class NailPolishApp:
         self.inventory = Inventory()
         self.wishlist = Wishlist()
 
-        self.heart_icon = tk.PhotoImage(file="heart_icon.png").subsample(12, 12)
+        assets_path = os.path.join(os.path.dirname(__file__), "assets")
+        self.heart_icon = tk.PhotoImage(file=os.path.join(assets_path, "heart_icon.png")).subsample(12, 12)
+        self.plus_icon = tk.PhotoImage(file=os.path.join(assets_path, "plus_icon.png")).subsample(15, 15)
+        self.minus_icon = tk.PhotoImage(file=os.path.join(assets_path, "minus_icon.png")).subsample(15, 15)
 
         self.create_buttons()
 
@@ -39,11 +43,23 @@ class NailPolishApp:
         items = getattr(self, item_type).display_all()
 
         if items:
-            items_window = tk.Toplevel(self.root)
-            items_window.title(f"Your {item_type.capitalize()}")
+            if hasattr(self, 'items_window') and self.items_window.winfo_exists():
+                for widget in self.items_window.winfo_children():
+                    widget.destroy()
+            else:
+                self.items_window = tk.Toplevel(self.root)
+                self.items_window.title(f"Your {item_type.capitalize()}")
 
             for item in items:
-                tk.Label(items_window, text=str(item)).pack(anchor='w', padx=10, pady=2)
+                frame = tk.Frame(self.items_window)
+                frame.pack(fill='x', pady=5)
+
+                tk.Label(frame, text=str(item)).pack(side="left", padx=10)
+
+                if item_type == "wishlist":
+                    tk.Button(frame, image=self.plus_icon, command=lambda p=item: self.add_to_inventory(p)).pack(side="right")
+                    tk.Button(frame, image=self.minus_icon, command=lambda p=item: self.remove_from_wishlist(p)).pack(side="right")
+
         else:
             self.show_message(f"Your {item_type.capitalize()}", f"Your {item_type} is empty.")
 
@@ -105,7 +121,7 @@ class NailPolishApp:
             results = self.db.search_polish(**data)
 
             if results:
-                polish = results[0]  # Assuming we're editing the first found polish
+                polish = results[0] 
                 polish_form.populate_form(polish)
                 self.edit_polish_form(polish, edit_window)
             else:
@@ -168,6 +184,17 @@ class NailPolishApp:
     def add_to_wishlist(self, polish):
         self.wishlist.manage_polish(polish, "add")
         self.show_message("Success", f"{polish.name} added to your wishlist.")
+
+    def remove_from_wishlist(self, polish):
+        self.wishlist.manage_polish(polish, "remove")
+        self.show_message("Success", f"{polish.name} removed from your wishlist.")
+        self.view_items("wishlist")
+
+    def add_to_inventory(self, polish):
+        self.inventory.manage_polish(polish, "add")
+        self.show_message("Success", f"{polish.name} added to your inventory.")
+        self.wishlist.manage_polish(polish, "remove")
+        self.view_items("wishlist")
 
 if __name__ == "__main__":
     root = tk.Tk()

@@ -71,7 +71,7 @@ class PolishForm:
         for value in values:
             listbox.insert(tk.END, value)
         
-        self.listboxes[entry] = listbox  # Associate the listbox with the entry
+        self.listboxes[entry] = listbox
 
     def select_from_listbox(self, event, entry):
         widget = event.widget
