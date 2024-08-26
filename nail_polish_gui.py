@@ -19,6 +19,7 @@ class NailPolishApp:
         self.heart_icon = tk.PhotoImage(file=os.path.join(assets_path, "heart_icon.png")).subsample(12, 12)
         self.plus_icon = tk.PhotoImage(file=os.path.join(assets_path, "plus_icon.png")).subsample(15, 15)
         self.minus_icon = tk.PhotoImage(file=os.path.join(assets_path, "minus_icon.png")).subsample(15, 15)
+        self.clear_icon = tk.PhotoImage(file=os.path.join(assets_path, "x_icon.png")).subsample(20, 20)
 
         self.create_buttons()
 
@@ -67,61 +68,114 @@ class NailPolishApp:
         edit_window = tk.Toplevel(self.root)
         edit_window.title("Edit Polish in Database")
 
-        polish_form = PolishForm(edit_window, self.db)
+        polish_form = PolishForm(edit_window, self.db, self)
 
-        def search_and_edit():
-            data = polish_form.get_form_data()
+        tk.Button(edit_window, text="Search", command=lambda: self.search_and_edit(polish_form, edit_window)).grid(row=14, column=0, pady=5)
+        tk.Button(edit_window, text="Add Polish to Database", command=lambda: self.add_polish_to_database(polish_form)).grid(row=14, column=1, pady=5)
+        tk.Button(edit_window, text="Show All", command=lambda: self.show_all(edit_window)).grid(row=14, column=2, columnspan=2, pady=5)
 
-            results = self.db.search_polish(**data)
+    def search_and_edit(self, polish_form, edit_window):
+        data = polish_form.get_form_data()
 
-            if results:
-                result_window = tk.Toplevel(edit_window)
-                result_window.title("Search Results")
+        results = self.db.search_polish(**data)
 
-                for idx, polish in enumerate(results):
-                    frame = tk.Frame(result_window)
-                    frame.pack(fill='x', pady=5)
+        def display_page(page_number):
+            # Clear previous items
+            for widget in result_window.winfo_children():
+                widget.destroy()
 
-                    tk.Label(frame, text=str(polish)).pack(side="left", padx=10)
-                    tk.Button(frame, image=self.plus_icon, command=lambda p=polish: self.add_to_inventory_and_close(p, result_window)).pack(side="right")
-                    tk.Button(frame, image=self.minus_icon, command=lambda p=polish: self.remove_selected_polish(p, result_window)).pack(side="right")
-                    tk.Button(frame, image=self.heart_icon, command=lambda p=polish: self.add_to_wishlist(p)).pack(side="right")
-                    tk.Button(frame, text="Edit", command=lambda p=polish: self.edit_polish_form(p, result_window)).pack(side="right")
-            else:
-                self.show_message("Search Results", "No polishes found matching the criteria.")
+            # Calculate start and end indices for the items on the current page
+            start_idx = (page_number - 1) * 15
+            end_idx = start_idx + 15
 
-        def add_polish():
-            data = polish_form.get_form_data()
+            # Display items for the current page
+            for polish in results[start_idx:end_idx]:
+                frame = tk.Frame(result_window)
+                frame.pack(fill='x', pady=5)
 
-            if not data["name"]:
-                self.show_message("Error", "Polish name is required.")
-                return
+                tk.Label(frame, text=str(polish)).pack(side="left", padx=10)
+                tk.Button(frame, image=self.plus_icon, command=lambda p=polish: self.add_to_inventory_and_close(p, result_window)).pack(side="right")
+                tk.Button(frame, image=self.minus_icon, command=lambda p=polish: self.remove_selected_polish(p, result_window)).pack(side="right")
+                tk.Button(frame, image=self.heart_icon, command=lambda p=polish: self.add_to_wishlist(p)).pack(side="right")
+                tk.Button(frame, text="Edit", command=lambda p=polish: self.edit_polish_form(p, result_window)).pack(side="right")
 
-            new_polish = Polish(**data)
-            self.db.manage_polish(new_polish, "add")
-            self.show_message("Success", "New polish added to the database.")
+            # Page navigation controls
+            total_pages = (len(results) + 14) // 15
+            if total_pages > 1:
+                navigation_frame = tk.Frame(result_window)
+                navigation_frame.pack(fill='x', pady=10)
 
-        def show_all():
-            all_polishes = self.db.display_all()
-            if all_polishes:
-                result_window = tk.Toplevel(edit_window)
-                result_window.title("All Polishes in Database")
+                if page_number > 1:
+                    tk.Button(navigation_frame, text="<", command=lambda: display_page(page_number - 1)).pack(side="left", padx=5)
 
-                for idx, polish in enumerate(all_polishes):
-                    frame = tk.Frame(result_window)
-                    frame.pack(fill='x', pady=5)
+                tk.Label(navigation_frame, text=f"Page {page_number} of {total_pages}").pack(side="left", padx=10)
 
-                    tk.Label(frame, text=str(polish)).pack(side="left", padx=10)
-                    tk.Button(frame, image=self.plus_icon, command=lambda p=polish: self.add_to_inventory_and_close(p, result_window)).pack(side="right")
-                    tk.Button(frame, image=self.minus_icon, command=lambda p=polish: self.remove_selected_polish(p, result_window)).pack(side="right")
-                    tk.Button(frame, image=self.heart_icon, command=lambda p=polish: self.add_to_wishlist(p)).pack(side="right")
-                    tk.Button(frame, text="Edit", command=lambda p=polish: self.edit_polish_form(p, result_window)).pack(side="right")
-            else:
-                self.show_message("Database", "The database is empty.")
+                if page_number < total_pages:
+                    tk.Button(navigation_frame, text=">", command=lambda: display_page(page_number + 1)).pack(side="left", padx=5)
 
-        tk.Button(edit_window, text="Search", command=search_and_edit).grid(row=14, column=0, pady=5)
-        tk.Button(edit_window, text="Add Polish to Database", command=add_polish).grid(row=14, column=1, pady=5)
-        tk.Button(edit_window, text="Show All", command=show_all).grid(row=14, column=2, columnspan=2, pady=5)
+        if results:
+            result_window = tk.Toplevel(edit_window)
+            result_window.title("Search Results")
+
+            display_page(1)  # Start by displaying the first page
+        else:
+            self.show_message("Search Results", "No polishes found matching the criteria.")
+
+    def show_all(self, edit_window):
+        all_polishes = self.db.display_all()
+
+        def display_page(page_number):
+            # Clear previous items
+            for widget in result_window.winfo_children():
+                widget.destroy()
+
+            # Calculate start and end indices for the items on the current page
+            start_idx = (page_number - 1) * 15
+            end_idx = start_idx + 15
+
+            # Display items for the current page
+            for polish in all_polishes[start_idx:end_idx]:
+                frame = tk.Frame(result_window)
+                frame.pack(fill='x', pady=5)
+
+                tk.Label(frame, text=str(polish)).pack(side="left", padx=10)
+                tk.Button(frame, image=self.plus_icon, command=lambda p=polish: self.add_to_inventory_and_close(p, result_window)).pack(side="right")
+                tk.Button(frame, image=self.minus_icon, command=lambda p=polish: self.remove_selected_polish(p, result_window)).pack(side="right")
+                tk.Button(frame, image=self.heart_icon, command=lambda p=polish: self.add_to_wishlist(p)).pack(side="right")
+                tk.Button(frame, text="Edit", command=lambda p=polish: self.edit_polish_form(p, result_window)).pack(side="right")
+
+            # Page navigation controls
+            total_pages = (len(all_polishes) + 14) // 15
+            if total_pages > 1:
+                navigation_frame = tk.Frame(result_window)
+                navigation_frame.pack(fill='x', pady=10)
+
+                if page_number > 1:
+                    tk.Button(navigation_frame, text="<", command=lambda: display_page(page_number - 1)).pack(side="left", padx=5)
+
+                tk.Label(navigation_frame, text=f"Page {page_number} of {total_pages}").pack(side="left", padx=10)
+
+                if page_number < total_pages:
+                    tk.Button(navigation_frame, text=">", command=lambda: display_page(page_number + 1)).pack(side="left", padx=5)
+
+        if all_polishes:
+            result_window = tk.Toplevel(edit_window)
+            result_window.title("All Polishes in Database")
+
+            display_page(1)  # Start by displaying the first page
+        else:
+            self.show_message("Database", "The database is empty.")
+
+    def add_polish_to_database(self, polish_form):
+        data = polish_form.get_form_data()
+
+        if not data["name"]:
+            self.show_message("Error", "Polish name is required.")
+            return
+
+        new_polish = Polish(**data)
+        self.db.manage_polish(new_polish, "add")
+        self.show_message("Success", "New polish added to the database.")
 
     def remove_selected_polish(self, polish, result_window):
         self.db.manage_polish(polish, "remove")
@@ -133,7 +187,7 @@ class NailPolishApp:
         edit_window = tk.Toplevel(self.root)
         edit_window.title("Edit Polish")
 
-        polish_form = PolishForm(edit_window, self.db)
+        polish_form = PolishForm(edit_window, self.db, self)  # Pass 'self' as the app instance
         polish_form.populate_form(polish)
 
         def save_changes():

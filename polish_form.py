@@ -2,35 +2,45 @@ import tkinter as tk
 from datetime import datetime
 
 class PolishForm:
-    def __init__(self, parent, db):
+    def __init__(self, parent, db, app):
         self.parent = parent
         self.db = db
+        self.app = app  # Store the app instance to access icons
         self.entries = {}
         self.listboxes = {}
         self.create_form_fields()
 
     def create_form_fields(self):
+        # Define common properties
+        label_padx = 10
+        label_pady = 5
+        entry_padx = 5
+        button_padx = 5
+        
         # Polish Name
-        tk.Label(self.parent, text="Polish Name:").grid(row=0, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(self.parent, text="Polish Name:").grid(row=0, column=0, padx=label_padx, pady=label_pady, sticky="e")
         name_entry = tk.Entry(self.parent)
-        name_entry.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
+        name_entry.grid(row=0, column=1, padx=entry_padx, pady=label_pady, sticky="ew")
+        tk.Button(self.parent, image=self.app.clear_icon, command=lambda: self.clear_entry(name_entry)).grid(row=0, column=2, padx=button_padx)  # Access clear_icon through self.app
         self.entries["name"] = name_entry
 
         # Collection
-        tk.Label(self.parent, text="Collection:").grid(row=1, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(self.parent, text="Collection:").grid(row=1, column=0, padx=label_padx, pady=label_pady, sticky="e")
         collection_entry = tk.Entry(self.parent)
-        collection_entry.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
+        collection_entry.grid(row=1, column=1, padx=entry_padx, pady=label_pady, sticky="ew")
+        tk.Button(self.parent, image=self.app.clear_icon, command=lambda: self.clear_entry(collection_entry)).grid(row=1, column=2, padx=button_padx)  # Access clear_icon through self.app
         self.entries["collection"] = collection_entry
         self.create_listbox_for_entry(collection_entry, self.get_unique_values("collection"), row=2)
 
         # Year
-        tk.Label(self.parent, text="Year:").grid(row=3, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(self.parent, text="Year:").grid(row=3, column=0, padx=label_padx, pady=label_pady, sticky="e")
         year_entry = tk.Entry(self.parent)
-        year_entry.grid(row=3, column=1, padx=10, pady=5, sticky="ew")
+        year_entry.grid(row=3, column=1, padx=entry_padx, pady=label_pady, sticky="ew")
+        tk.Button(self.parent, image=self.app.clear_icon, command=lambda: self.clear_entry(year_entry)).grid(row=3, column=2, padx=button_padx)  # Access clear_icon through self.app
         self.entries["year"] = year_entry
 
         year_listbox = tk.Listbox(self.parent, height=4)
-        year_listbox.grid(row=4, column=1, padx=10, pady=5, sticky="ew")
+        year_listbox.grid(row=4, column=1, padx=entry_padx, pady=label_pady, sticky="ew")
         scrollbar = tk.Scrollbar(self.parent, orient="vertical", command=year_listbox.yview)
         scrollbar.grid(row=4, column=2, sticky='ns')
         year_listbox.config(yscrollcommand=scrollbar.set)
@@ -43,32 +53,39 @@ class PolishForm:
         year_listbox.bind("<<ListboxSelect>>", lambda event: self.select_from_listbox(event, year_entry))
 
         # Brand
-        tk.Label(self.parent, text="Brand:").grid(row=5, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(self.parent, text="Brand:").grid(row=5, column=0, padx=label_padx, pady=label_pady, sticky="e")
         brand_entry = tk.Entry(self.parent)
-        brand_entry.grid(row=5, column=1, padx=10, pady=5, sticky="ew")
+        brand_entry.grid(row=5, column=1, padx=entry_padx, pady=label_pady, sticky="ew")
+        tk.Button(self.parent, image=self.app.clear_icon, command=lambda: self.clear_entry(brand_entry)).grid(row=5, column=2, padx=button_padx)  # Access clear_icon through self.app
         self.entries["brand"] = brand_entry
         self.create_listbox_for_entry(brand_entry, self.get_unique_values("brand"), row=6)
 
         # Color
-        tk.Label(self.parent, text="Color:").grid(row=7, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(self.parent, text="Color:").grid(row=7, column=0, padx=label_padx, pady=label_pady, sticky="e")
         color_entry = tk.Entry(self.parent)
-        color_entry.grid(row=7, column=1, padx=10, pady=5, sticky="ew")
+        color_entry.grid(row=7, column=1, padx=entry_padx, pady=label_pady, sticky="ew")
+        tk.Button(self.parent, image=self.app.clear_icon, command=lambda: self.clear_entry(color_entry)).grid(row=7, column=2, padx=button_padx)  # Access clear_icon through self.app
         self.entries["color"] = color_entry
         self.create_listbox_for_entry(color_entry, self.get_unique_values("color"), row=8)
 
         # Finish
-        tk.Label(self.parent, text="Finish:").grid(row=9, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(self.parent, text="Finish:").grid(row=9, column=0, padx=label_padx, pady=label_pady, sticky="e")
         finish_entry = tk.Entry(self.parent)
-        finish_entry.grid(row=9, column=1, padx=10, pady=5, sticky="ew")
+        finish_entry.grid(row=9, column=1, padx=entry_padx, pady=label_pady, sticky="ew")
+        tk.Button(self.parent, image=self.app.clear_icon, command=lambda: self.clear_entry(finish_entry)).grid(row=9, column=2, padx=button_padx)  # Access clear_icon through self.app
         self.entries["finish"] = finish_entry
         self.create_listbox_for_entry(finish_entry, self.get_unique_values("finish"), row=10)
 
         # Alternate Finish
-        tk.Label(self.parent, text="Alternate Finish:").grid(row=11, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(self.parent, text="Alternate Finish:").grid(row=11, column=0, padx=label_padx, pady=label_pady, sticky="e")
         alt_finish_entry = tk.Entry(self.parent)
-        alt_finish_entry.grid(row=11, column=1, padx=10, pady=5, sticky="ew")
+        alt_finish_entry.grid(row=11, column=1, padx=entry_padx, pady=label_pady, sticky="ew")
+        tk.Button(self.parent, image=self.app.clear_icon, command=lambda: self.clear_entry(alt_finish_entry)).grid(row=11, column=2, padx=button_padx)  # Access clear_icon through self.app
         self.entries["alternate_finish"] = alt_finish_entry
         self.create_listbox_for_entry(alt_finish_entry, self.get_unique_values("alternate_finish"), row=12)
+
+    def clear_entry(self, entry):
+        entry.delete(0, tk.END)
 
     def create_listbox_for_entry(self, entry, values, row):
         listbox = tk.Listbox(self.parent, height=5)
