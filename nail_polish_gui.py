@@ -59,6 +59,8 @@ class NailPolishApp:
                 if item_type == "wishlist":
                     tk.Button(frame, image=self.plus_icon, command=lambda p=item: self.add_to_inventory(p)).pack(side="right")
                     tk.Button(frame, image=self.minus_icon, command=lambda p=item: self.remove_from_wishlist(p)).pack(side="right")
+                elif item_type == "inventory":
+                    tk.Button(frame, image=self.minus_icon, command=lambda p=item: self.remove_from_inventory(p)).pack(side="right")
 
         else:
             self.show_message(f"Your {item_type.capitalize()}", f"Your {item_type} is empty.")
@@ -195,6 +197,11 @@ class NailPolishApp:
         self.show_message("Success", f"{polish.name} added to your inventory.")
         self.wishlist.manage_polish(polish, "remove")
         self.view_items("wishlist")
+
+    def remove_from_inventory(self, polish):
+        self.inventory.manage_polish(polish, "remove")
+        self.show_message("Success", f"{polish.name} removed from your inventory.")
+        self.view_items("inventory")
 
 if __name__ == "__main__":
     root = tk.Tk()

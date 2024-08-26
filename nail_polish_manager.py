@@ -1,10 +1,13 @@
 import json
+import os
 from tkinter import messagebox
 from polish_database import Polish, PolishDatabase
 
 class Inventory:
     def __init__(self, filename="inventory.json"):
-        self.filename = filename
+        database_folder = os.path.join(os.path.dirname(__file__), "database")
+        os.makedirs(database_folder, exist_ok=True)
+        self.filename = os.path.join(database_folder, filename)
         self.polishes = self.load_inventory()
 
     def load_inventory(self):
@@ -35,7 +38,9 @@ class Inventory:
     
 class Wishlist:
     def __init__(self, filename="wishlist.json"):
-        self.filename = filename
+        database_folder = os.path.join(os.path.dirname(__file__), "database")
+        os.makedirs(database_folder, exist_ok=True)
+        self.filename = os.path.join(database_folder, filename)
         self.polishes = self.load_wishlist()
 
     def load_wishlist(self):
