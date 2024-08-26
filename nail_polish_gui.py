@@ -7,7 +7,8 @@ from polish_form import PolishForm
 class NailPolishApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Nail Polish Manager")
+        self.root.title("Polish Manager by Распутин")
+        self.root.geometry("325x350")
         self.current_info_window = None
 
         self.db = PolishDatabase()
@@ -84,8 +85,9 @@ class NailPolishApp:
                     frame = tk.Frame(result_window)
                     frame.pack(fill='x', pady=5)
 
-                    tk.Button(frame, text=str(polish), command=lambda p=polish: self.add_to_inventory_and_close(p, result_window)).pack(side="left")
+                    tk.Label(frame, text=str(polish)).pack(side="left", padx=10)
                     tk.Button(frame, image=self.heart_icon, command=lambda p=polish: self.add_to_wishlist(p)).pack(side="right")
+                    tk.Button(frame, text="Add to Inventory", command=lambda p=polish: self.add_to_inventory_and_close(p, result_window)).pack(side="right")
             else:
                 self.show_message("Search Results", "No polishes found matching the criteria.")
 
@@ -123,9 +125,15 @@ class NailPolishApp:
             results = self.db.search_polish(**data)
 
             if results:
-                polish = results[0] 
-                polish_form.populate_form(polish)
-                self.edit_polish_form(polish, edit_window)
+                result_window = tk.Toplevel(edit_window)
+                result_window.title("Select Polish to Edit")
+
+                for idx, polish in enumerate(results):
+                    frame = tk.Frame(result_window)
+                    frame.pack(fill='x', pady=5)
+
+                    tk.Label(frame, text=str(polish)).pack(side="left", padx=10)
+                    tk.Button(frame, text="Edit", command=lambda p=polish: self.edit_polish_form(p, result_window)).pack(side="right")
             else:
                 self.show_message("Search Results", "No polishes found matching the criteria.")
 
@@ -159,7 +167,11 @@ class NailPolishApp:
         result_window.destroy()
 
     def edit_polish_form(self, polish, parent_window):
-        polish_form = PolishForm(parent_window, self.db)
+        parent_window.destroy()  # Close the selection window to avoid having two windows open at the same time
+        edit_window = tk.Toplevel(self.root)
+        edit_window.title("Edit Polish")
+
+        polish_form = PolishForm(edit_window, self.db)
         polish_form.populate_form(polish)
 
         def save_changes():
@@ -174,9 +186,9 @@ class NailPolishApp:
 
             self.db.manage_polish(polish, "update")
             self.show_message("Success", "Polish details updated successfully.")
-            parent_window.destroy()
+            edit_window.destroy()
 
-        tk.Button(parent_window, text="Save Changes", command=save_changes).grid(row=12, column=0, columnspan=2, pady=10)
+        tk.Button(edit_window, text="Save Changes", command=save_changes).grid(row=12, column=0, columnspan=2, pady=10)
 
     def add_to_inventory_and_close(self, polish, window):
         self.inventory.manage_polish(polish, "add")
