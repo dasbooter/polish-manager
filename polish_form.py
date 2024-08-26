@@ -11,66 +11,73 @@ class PolishForm:
 
     def create_form_fields(self):
         # Polish Name
-        tk.Label(self.parent, text="Polish Name:").grid(row=0, column=0, padx=10, pady=5)
+        tk.Label(self.parent, text="Polish Name:").grid(row=0, column=0, padx=10, pady=5, sticky="e")
         name_entry = tk.Entry(self.parent)
-        name_entry.grid(row=0, column=1, padx=10, pady=5)
+        name_entry.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
         self.entries["name"] = name_entry
 
         # Collection
-        tk.Label(self.parent, text="Collection:").grid(row=1, column=0, padx=10, pady=5)
+        tk.Label(self.parent, text="Collection:").grid(row=1, column=0, padx=10, pady=5, sticky="e")
         collection_entry = tk.Entry(self.parent)
-        collection_entry.grid(row=1, column=1, padx=10, pady=5)
+        collection_entry.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
         self.entries["collection"] = collection_entry
         self.create_listbox_for_entry(collection_entry, self.get_unique_values("collection"), row=2)
 
         # Year
-        tk.Label(self.parent, text="Year:").grid(row=3, column=0, padx=10, pady=5)
+        tk.Label(self.parent, text="Year:").grid(row=3, column=0, padx=10, pady=5, sticky="e")
+        year_entry = tk.Entry(self.parent)
+        year_entry.grid(row=3, column=1, padx=10, pady=5, sticky="ew")
+        self.entries["year"] = year_entry
+
         year_listbox = tk.Listbox(self.parent, height=4)
-        year_listbox.grid(row=3, column=1, padx=10, pady=5, sticky="ew")
+        year_listbox.grid(row=4, column=1, padx=10, pady=5, sticky="ew")
         scrollbar = tk.Scrollbar(self.parent, orient="vertical", command=year_listbox.yview)
-        scrollbar.grid(row=3, column=2, sticky='ns')
+        scrollbar.grid(row=4, column=2, sticky='ns')
         year_listbox.config(yscrollcommand=scrollbar.set)
+
         current_year = datetime.now().year
         for year in range(current_year, 1900, -1):
             year_listbox.insert(tk.END, str(year))
         self.listboxes["year"] = year_listbox
 
+        year_listbox.bind("<<ListboxSelect>>", lambda event: self.select_from_listbox(event, year_entry))
+
         # Brand
-        tk.Label(self.parent, text="Brand:").grid(row=4, column=0, padx=10, pady=5)
+        tk.Label(self.parent, text="Brand:").grid(row=5, column=0, padx=10, pady=5, sticky="e")
         brand_entry = tk.Entry(self.parent)
-        brand_entry.grid(row=4, column=1, padx=10, pady=5)
+        brand_entry.grid(row=5, column=1, padx=10, pady=5, sticky="ew")
         self.entries["brand"] = brand_entry
-        self.create_listbox_for_entry(brand_entry, self.get_unique_values("brand"), row=5)
+        self.create_listbox_for_entry(brand_entry, self.get_unique_values("brand"), row=6)
 
         # Color
-        tk.Label(self.parent, text="Color:").grid(row=6, column=0, padx=10, pady=5)
+        tk.Label(self.parent, text="Color:").grid(row=7, column=0, padx=10, pady=5, sticky="e")
         color_entry = tk.Entry(self.parent)
-        color_entry.grid(row=6, column=1, padx=10, pady=5)
+        color_entry.grid(row=7, column=1, padx=10, pady=5, sticky="ew")
         self.entries["color"] = color_entry
-        self.create_listbox_for_entry(color_entry, self.get_unique_values("color"), row=7)
+        self.create_listbox_for_entry(color_entry, self.get_unique_values("color"), row=8)
 
         # Finish
-        tk.Label(self.parent, text="Finish:").grid(row=8, column=0, padx=10, pady=5)
+        tk.Label(self.parent, text="Finish:").grid(row=9, column=0, padx=10, pady=5, sticky="e")
         finish_entry = tk.Entry(self.parent)
-        finish_entry.grid(row=8, column=1, padx=10, pady=5)
+        finish_entry.grid(row=9, column=1, padx=10, pady=5, sticky="ew")
         self.entries["finish"] = finish_entry
-        self.create_listbox_for_entry(finish_entry, self.get_unique_values("finish"), row=9)
+        self.create_listbox_for_entry(finish_entry, self.get_unique_values("finish"), row=10)
 
         # Alternate Finish
-        tk.Label(self.parent, text="Alternate Finish:").grid(row=10, column=0, padx=10, pady=5)
+        tk.Label(self.parent, text="Alternate Finish:").grid(row=11, column=0, padx=10, pady=5, sticky="e")
         alt_finish_entry = tk.Entry(self.parent)
-        alt_finish_entry.grid(row=10, column=1, padx=10, pady=5)
+        alt_finish_entry.grid(row=11, column=1, padx=10, pady=5, sticky="ew")
         self.entries["alternate_finish"] = alt_finish_entry
-        self.create_listbox_for_entry(alt_finish_entry, self.get_unique_values("alternate_finish"), row=11)
+        self.create_listbox_for_entry(alt_finish_entry, self.get_unique_values("alternate_finish"), row=12)
 
     def create_listbox_for_entry(self, entry, values, row):
         listbox = tk.Listbox(self.parent, height=5)
-        listbox.grid(row=row, column=1, padx=10, pady=5)
+        listbox.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
         listbox.bind("<<ListboxSelect>>", lambda event: self.select_from_listbox(event, entry))
-        
+
         for value in values:
             listbox.insert(tk.END, value)
-        
+
         self.listboxes[entry] = listbox
 
     def select_from_listbox(self, event, entry):
@@ -101,7 +108,14 @@ class PolishForm:
         data = {}
         for key, widget in self.entries.items():
             data[key] = widget.get()
-        if "year" in self.listboxes:
-            selection = self.listboxes["year"].curselection()
-            data["year"] = self.listboxes["year"].get(selection) if selection else ""
+        
+        # Handle the year separately to ensure it gets saved correctly
+        if "year" in self.entries:
+            year_value = self.entries["year"].get()
+            if year_value:  # If a value is entered manually
+                data["year"] = year_value
+            else:  # If a value is selected from the listbox
+                selection = self.listboxes["year"].curselection()
+                data["year"] = self.listboxes["year"].get(selection) if selection else ""
+
         return data
