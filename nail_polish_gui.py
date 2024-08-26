@@ -58,11 +58,14 @@ class NailPolishApp:
                 if item_type == "wishlist":
                     tk.Button(frame, image=self.plus_icon, command=lambda p=item: self.add_to_inventory(p)).pack(side="right")
                     tk.Button(frame, image=self.minus_icon, command=lambda p=item: self.remove_from_wishlist(p)).pack(side="right")
-                elif item_type == "inventory":
+                else:  # item_type == "inventory"
                     tk.Button(frame, image=self.minus_icon, command=lambda p=item: self.remove_from_inventory(p)).pack(side="right")
 
         else:
             self.show_message(f"Your {item_type.capitalize()}", f"Your {item_type} is empty.")
+
+    def create_button(self, parent, text, command, row, col, col_span=1, pady=5):
+        return tk.Button(parent, text=text, command=command).grid(row=row, column=col, columnspan=col_span, pady=pady)
 
     def edit_polish_in_database(self):
         edit_window = tk.Toplevel(self.root)
@@ -70,36 +73,34 @@ class NailPolishApp:
 
         polish_form = PolishForm(edit_window, self.db, self)
 
-        tk.Button(edit_window, text="Search", command=lambda: self.search_and_edit(polish_form, edit_window)).grid(row=14, column=0, pady=5)
-        tk.Button(edit_window, text="Add Polish to Database", command=lambda: self.add_polish_to_database(polish_form)).grid(row=14, column=1, pady=5)
-        tk.Button(edit_window, text="Show All", command=lambda: self.show_all(edit_window)).grid(row=14, column=2, columnspan=2, pady=5)
+        self.create_button(edit_window, "Search", lambda: self.search_and_display_results(polish_form, edit_window, "search"), 14, 0)
+        self.create_button(edit_window, "Add Polish to Database", lambda: self.add_polish_to_database(polish_form), 14, 1)
+        self.create_button(edit_window, "Show All", lambda: self.search_and_display_results(polish_form, edit_window, "all"), 14, 2, col_span=2)
 
-    def search_and_edit(self, polish_form, edit_window):
-        data = polish_form.get_form_data()
-
-        results = self.db.search_polish(**data)
+    def search_and_display_results(self, polish_form, edit_window, mode):
+        if mode == "search":
+            data = polish_form.get_form_data()
+            results = self.db.search_polish(**data)
+        else:  # mode == "all"
+            results = self.db.display_all()
 
         def display_page(page_number):
-            # Clear previous items
             for widget in result_window.winfo_children():
                 widget.destroy()
 
-            # Calculate start and end indices for the items on the current page
             start_idx = (page_number - 1) * 15
             end_idx = start_idx + 15
 
-            # Display items for the current page
             for polish in results[start_idx:end_idx]:
                 frame = tk.Frame(result_window)
                 frame.pack(fill='x', pady=5)
 
                 tk.Label(frame, text=str(polish)).pack(side="left", padx=10)
-                tk.Button(frame, image=self.plus_icon, command=lambda p=polish: self.add_to_inventory_and_close(p, result_window)).pack(side="right")
+                tk.Button(frame, image=self.plus_icon, command=lambda p=polish: self.add_to_inventory(p)).pack(side="right")
                 tk.Button(frame, image=self.minus_icon, command=lambda p=polish: self.remove_selected_polish(p, result_window)).pack(side="right")
                 tk.Button(frame, image=self.heart_icon, command=lambda p=polish: self.add_to_wishlist(p)).pack(side="right")
                 tk.Button(frame, text="Edit", command=lambda p=polish: self.edit_polish_form(p, result_window)).pack(side="right")
 
-            # Page navigation controls
             total_pages = (len(results) + 14) // 15
             if total_pages > 1:
                 navigation_frame = tk.Frame(result_window)
@@ -115,56 +116,11 @@ class NailPolishApp:
 
         if results:
             result_window = tk.Toplevel(edit_window)
-            result_window.title("Search Results")
+            result_window.title("Search Results" if mode == "search" else "All Polishes in Database")
 
-            display_page(1)  # Start by displaying the first page
+            display_page(1)
         else:
-            self.show_message("Search Results", "No polishes found matching the criteria.")
-
-    def show_all(self, edit_window):
-        all_polishes = self.db.display_all()
-
-        def display_page(page_number):
-            # Clear previous items
-            for widget in result_window.winfo_children():
-                widget.destroy()
-
-            # Calculate start and end indices for the items on the current page
-            start_idx = (page_number - 1) * 15
-            end_idx = start_idx + 15
-
-            # Display items for the current page
-            for polish in all_polishes[start_idx:end_idx]:
-                frame = tk.Frame(result_window)
-                frame.pack(fill='x', pady=5)
-
-                tk.Label(frame, text=str(polish)).pack(side="left", padx=10)
-                tk.Button(frame, image=self.plus_icon, command=lambda p=polish: self.add_to_inventory_and_close(p, result_window)).pack(side="right")
-                tk.Button(frame, image=self.minus_icon, command=lambda p=polish: self.remove_selected_polish(p, result_window)).pack(side="right")
-                tk.Button(frame, image=self.heart_icon, command=lambda p=polish: self.add_to_wishlist(p)).pack(side="right")
-                tk.Button(frame, text="Edit", command=lambda p=polish: self.edit_polish_form(p, result_window)).pack(side="right")
-
-            # Page navigation controls
-            total_pages = (len(all_polishes) + 14) // 15
-            if total_pages > 1:
-                navigation_frame = tk.Frame(result_window)
-                navigation_frame.pack(fill='x', pady=10)
-
-                if page_number > 1:
-                    tk.Button(navigation_frame, text="<", command=lambda: display_page(page_number - 1)).pack(side="left", padx=5)
-
-                tk.Label(navigation_frame, text=f"Page {page_number} of {total_pages}").pack(side="left", padx=10)
-
-                if page_number < total_pages:
-                    tk.Button(navigation_frame, text=">", command=lambda: display_page(page_number + 1)).pack(side="left", padx=5)
-
-        if all_polishes:
-            result_window = tk.Toplevel(edit_window)
-            result_window.title("All Polishes in Database")
-
-            display_page(1)  # Start by displaying the first page
-        else:
-            self.show_message("Database", "The database is empty.")
+            self.show_message("Search Results" if mode == "search" else "Database", "No polishes found matching the criteria." if mode == "search" else "The database is empty.")
 
     def add_polish_to_database(self, polish_form):
         data = polish_form.get_form_data()
@@ -183,11 +139,11 @@ class NailPolishApp:
         result_window.destroy()
 
     def edit_polish_form(self, polish, parent_window):
-        parent_window.destroy()  # Close the selection window to avoid having two windows open at the same time
+        parent_window.destroy()  
         edit_window = tk.Toplevel(self.root)
         edit_window.title("Edit Polish")
 
-        polish_form = PolishForm(edit_window, self.db, self)  # Pass 'self' as the app instance
+        polish_form = PolishForm(edit_window, self.db, self)
         polish_form.populate_form(polish)
 
         def save_changes():
@@ -206,11 +162,6 @@ class NailPolishApp:
 
         tk.Button(edit_window, text="Save Changes", command=save_changes).grid(row=14, column=0, columnspan=2, pady=10)
 
-    def add_to_inventory_and_close(self, polish, window):
-        self.inventory.manage_polish(polish, "add")
-        self.show_message("Success", f"{polish.name} added to your inventory.")
-        window.destroy()
-
     def add_to_wishlist(self, polish):
         self.wishlist.manage_polish(polish, "add")
         self.show_message("Success", f"{polish.name} added to your wishlist.")
@@ -223,7 +174,6 @@ class NailPolishApp:
     def add_to_inventory(self, polish):
         self.inventory.manage_polish(polish, "add")
         self.show_message("Success", f"{polish.name} added to your inventory.")
-        self.wishlist.manage_polish(polish, "remove")
         self.view_items("wishlist")
 
     def remove_from_inventory(self, polish):
