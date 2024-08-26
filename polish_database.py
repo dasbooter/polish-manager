@@ -1,4 +1,5 @@
 import json
+import os
 
 class Polish:
     def __init__(self, name, collection, year, brand, color, finish, alternate_finish):
@@ -38,7 +39,9 @@ class Polish:
 
 class PolishDatabase:
     def __init__(self, filename="polish_database.json"):
-        self.filename = filename
+        database_folder = os.path.join(os.path.dirname(__file__), "database")
+        os.makedirs(database_folder, exist_ok=True)
+        self.filename = os.path.join(database_folder, filename)
         self.polishes = self.load_polishes()
 
     def load_polishes(self):
@@ -82,3 +85,4 @@ class Inventory(PolishDatabase):
 class Wishlist(PolishDatabase):
     def __init__(self, filename="wishlist.json"):
         super().__init__(filename)
+
