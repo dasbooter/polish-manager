@@ -86,6 +86,7 @@ class NailPolishApp:
                     tk.Button(frame, image=self.plus_icon, command=lambda p=polish: self.add_to_inventory_and_close(p, result_window)).pack(side="right")
                     tk.Button(frame, image=self.minus_icon, command=lambda p=polish: self.remove_selected_polish(p, result_window)).pack(side="right")
                     tk.Button(frame, image=self.heart_icon, command=lambda p=polish: self.add_to_wishlist(p)).pack(side="right")
+                    tk.Button(frame, text="Edit", command=lambda p=polish: self.edit_polish_form(p, result_window)).pack(side="right")
             else:
                 self.show_message("Search Results", "No polishes found matching the criteria.")
 
@@ -114,12 +115,13 @@ class NailPolishApp:
                     tk.Button(frame, image=self.plus_icon, command=lambda p=polish: self.add_to_inventory_and_close(p, result_window)).pack(side="right")
                     tk.Button(frame, image=self.minus_icon, command=lambda p=polish: self.remove_selected_polish(p, result_window)).pack(side="right")
                     tk.Button(frame, image=self.heart_icon, command=lambda p=polish: self.add_to_wishlist(p)).pack(side="right")
+                    tk.Button(frame, text="Edit", command=lambda p=polish: self.edit_polish_form(p, result_window)).pack(side="right")
             else:
                 self.show_message("Database", "The database is empty.")
 
-        tk.Button(edit_window, text="Search", command=search_and_edit).grid(row=12, column=0, pady=5)
-        tk.Button(edit_window, text="Add Polish to Database", command=add_polish).grid(row=12, column=1, pady=5)
-        tk.Button(edit_window, text="Show All", command=show_all).grid(row=12, column=2, columnspan=2, pady=5)
+        tk.Button(edit_window, text="Search", command=search_and_edit).grid(row=14, column=0, pady=5)
+        tk.Button(edit_window, text="Add Polish to Database", command=add_polish).grid(row=14, column=1, pady=5)
+        tk.Button(edit_window, text="Show All", command=show_all).grid(row=14, column=2, columnspan=2, pady=5)
 
     def remove_selected_polish(self, polish, result_window):
         self.db.manage_polish(polish, "remove")
