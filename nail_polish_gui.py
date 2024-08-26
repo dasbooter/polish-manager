@@ -150,7 +150,7 @@ class NailPolishApp:
             self.show_message("Success", "Polish details updated successfully.")
             edit_window.destroy()
 
-        tk.Button(edit_window, text="Save Changes", command=save_changes).grid(row=12, column=0, columnspan=2, pady=10)
+        tk.Button(edit_window, text="Save Changes", command=save_changes).grid(row=14, column=0, columnspan=2, pady=10)
 
     def add_to_inventory_and_close(self, polish, window):
         self.inventory.manage_polish(polish, "add")
